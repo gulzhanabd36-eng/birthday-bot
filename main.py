@@ -77,30 +77,24 @@ def send_message(text, chat_id=None):
         return {}
 
 def check_birthdays():
+    """Check birthdays 4 days ahead and send notification."""
     birthdays = load_birthdays()
     today = datetime.now()
-    for days_before in [4, 3]:
-        target = today + timedelta(days=days_before)
-        target_str = target.strftime("%d.%m")
-        for person in birthdays:
-            if person["date"] == target_str:
-                collector = get_random_collector(exclude_name=person["name"])
-                if days_before == 4:
-                    header = "⚠️ <b>Напоминание — 4 дня до дня рождения!</b>"
-                else:
-                    header = "🎂 <b>Напоминание — 3 дня до дня рождения!</b>"
-                msg = (
-                    f"{header}\n\n"
-                    f"👤 <b>{person['name']}</b>\n"
-                    f"🗓 Дата: {person['date']}\n\n"
-                    f"📌 <b>Порядок действий:</b>\n"
-                    f"1️⃣ Сначала <b>удалите {person['name']}</b> из группы\n"
-                    f"2️⃣ Затем обсудите подарок 🎁\n\n"
-                    f"💰 <b>Сбор денег:</b> {collector}\n\n"
-                    f"Не забудьте поздравить именинника! 🥳"
-                )
-                send_message(msg)
-                logger.info(f"Sent notification for {person['name']}, collector: {collector}")
+    target = today + timedelta(days=4)
+    target_str = target.strftime("%d.%m")
+
+    for person in birthdays:
+        if person["date"] == target_str:
+            collector = get_random_collector(exclude_name=person["name"])
+            msg = (
+                f"🎂 <b>Через 4 дня день рождения!</b>\n\n"
+                f"👤 <b>{person['name']}</b>\n"
+                f"🗓 Дата: <b>{person['date']}</b>\n\n"
+                f"💰 <b>Сбор денег на подарок:</b> {collector}\n\n"
+                f"🎁 Не забудьте поздравить именинника! 🥳"
+            )
+            send_message(msg)
+            logger.info(f"Sent reminder for {person['name']}, collector: {collector}")
 
 # === КОМАНДЫ ===
 
@@ -191,7 +185,6 @@ async def cmd_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def cmd_collector(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if str(update.effective_chat.id) != str(CHAT_ID):
         return
-    # Check if birthday person name is passed as argument
     exclude = " ".join(context.args) if context.args else ""
     collector = get_random_collector(exclude_name=exclude)
     if exclude:
@@ -212,12 +205,13 @@ async def cmd_collector(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "🎂 <b>Birthday Bot — команды:</b>\n\n"
-        "/add Иван Иванов 15.03 — добавить\n"
-        "/remove Иван Иванов — удалить\n"
-        "/list — весь список\n"
-        "/collector — выбрать рандомного сборщика\n"
+        "/add Иван Иванов 15.03 — добавить сотрудника\n"
+        "/remove Иван Иванов — удалить сотрудника\n"
+        "/list — список всех\n"
+        "/collector — выбрать рандомного сборщика денег\n"
         "/collector Иван Иванов — выбрать сборщика (исключая именинника)\n"
-        "/help — эта справка",
+        "/help — эта справка\n\n"
+        "<i>Бот напоминает за 4 дня до ДР и сразу называет сборщика денег</i>",
         parse_mode="HTML"
     )
 
